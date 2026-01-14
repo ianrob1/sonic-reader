@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speedr - Speed Reading App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .app-header img {
+            width: 150px;
+            height: auto;
+        }
+
+        /* Paywall Styles */
+        .paywall {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .paywall.hidden {
+            display: none;
+        }
+
+        .pricing-card {
+            background: #111;
+            border-radius: 16px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .pricing-header {
+            margin-bottom: 32px;
+        }
+
+        .logo-img {
+            width: 180px;
+            height: auto;
+            margin-bottom: 24px;
+        }
+
+        .app-title {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-subtitle {
+            font-size: 18px;
+            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin-bottom: 32px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            color: #ccc;
+            font-size: 16px;
+        }
+
+        .feature-icon {
+            font-size: 20px;
+            min-width: 24px;
+        }
+
+        .price {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .price-period {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        .buy-btn {
+            background: #ef4444;
+            border: none;
+            color: #fff;
+            padding: 18px 48px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .buy-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .buy-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* App Styles */
+        .app-content {
+            display: none;
+        }
+
+        .app-content.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .upload-section {
+            background: #111;
+            border: 2px dashed #333;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #ef4444;
+            background: #151515;
+        }
+
+        .upload-section.active {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .reader-section {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .reader-section.active {
+            display: flex;
+        }
+
+        .reading-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 12px;
+            position: relative;
+            min-height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .crosshair {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #222;
+        }
+
+        .crosshair::before {
+            left: 0;
+            right: 0;
+            height: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .crosshair::after {
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .word-display {
+            font-size: 72px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            font-family: 'Georgia', serif;
+            position: relative;
+            z-index: 1;
+        }
+
+        .word-display .letter {
+            color: #fff;
+            transition: color 0.05s ease;
+        }
+
+        .word-display .letter.highlight {
+            color: #ef4444;
+            font-weight: 500;
+        }
+
+        .controls {
+            background: #111;
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .play-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn.primary {
+            background: #ef4444;
+        }
+
+        .btn.primary:hover {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slider-control {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #999;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #222;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #222;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #ef4444;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .pricing-card {
+                padding: 32px 24px;
+            }
+
+            .app-title {
+                font-size: 36px;
+            }
+
+            .word-display {
+                font-size: 48px;
+            }
+
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .play-controls {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Paywall -->
+    <div class="paywall" id="paywall">
+        <div class="pricing-card">
+            <div class="pricing-header">
+                <img src="logo.png" alt="Sonic Reader" class="logo-img">
+                <div class="app-subtitle">Read at superhuman speeds</div>
+            </div>
+
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <span>Read up to 1000 words per minute</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📄</span>
+                    <span>Unlimited file uploads</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <span>Scientifically proven RSVP technique</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🎨</span>
+                    <span>Clean, distraction-free interface</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⌨️</span>
+                    <span>Keyboard shortcuts & full control</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🆓</span>
+                    <span>First file free - try before you buy</span>
+                </div>
+            </div>
+
+            <div class="price">$9.99</div>
+            <div class="price-period">per month</div>
+
+            <button class="buy-btn" id="buyBtn">Subscribe Now</button>
+
+            <div class="secure-badge">
+                <span>🔒</span>
+                <span>Secure payment - Cancel anytime</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Content -->
+    <div class="container app-content" id="appContent">
+        <div class="app-header">
+            <img src="logo.png" alt="Sonic Reader">
+        </div>
+        
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">Drop your PDF or DOCX file here</div>
+            <div class="upload-subtext">or click to browse</div>
+            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt">
+        </div>
+
+        <div class="reader-section" id="readerSection">
+            <div class="reading-area">
+                <div class="crosshair"></div>
+                <div class="word-display" id="wordDisplay">
+                    <span class="letter">R</span><span class="letter highlight">e</span><span class="letter">a</span><span class="letter">d</span><span class="letter">y</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="control-row">
+                    <div class="play-controls">
+                        <button class="btn primary" id="playBtn">
+                            <span id="playIcon">▶</span>
+                            <span id="playText">Play</span>
+                        </button>
+                        <button class="btn" id="restartBtn">⟲ Restart</button>
+                        <button class="btn" id="newFileBtn">📄 New File</button>
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-label">
+                            <span>Speed</span>
+                            <span id="wpmDisplay">300 WPM</span>
+                        </div>
+                        <input type="range" class="slider" id="wpmSlider" min="100" max="1000" value="300" step="50">
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>📖</span>
+                        <span id="wordCount">0 words</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>⏱️</span>
+                        <span id="timeRemaining">0:00 remaining</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>📍</span>
+                        <span id="currentPosition">0/0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PDF.js worker setup
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Payment configuration
+        const PAYPAL_HOSTED_BUTTON_ID = '8N7PLYFKDKHPC'; // Your PayPal button ID
+        const PAYMENT_LINK = `https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=${PAYPAL_HOSTED_BUTTON_ID}`;
+        
+        // Note: Make sure to set PayPal return URL to: https://sonic-reader.com/success.html
+
+        // Check if user has paid or has free upload remaining
+        function checkAccess() {
+            const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+            const freeUploadsUsed = parseInt(localStorage.getItem('speedr_free_uploads') || '0');
+            
+            if (hasPaid || freeUploadsUsed === 0) {
+                showApp();
+            } else {
+                showPaywall();
+            }
+        }
+
+        function showPaywall() {
+            document.getElementById('paywall').classList.remove('hidden');
+            document.getElementById('appContent').classList.remove('active');
+        }
+
+        function showApp() {
+            document.getElementById('paywall').classList.add('hidden');
+            document.getElementById('appContent').classList.add('active');
+        }
+
+        function incrementFreeUpload() {
+            const freeUploadsUsed = parseInt(localStorage.getItem('speedr_free_uploads') || '0');
+            localStorage.setItem('speedr_free_uploads', (freeUploadsUsed + 1).toString());
+        }
+
+        function hasUsedFreeUpload() {
+            return parseInt(localStorage.getItem('speedr_free_uploads') || '0') >= 1;
+        }
+
+        // Buy button handler
+        document.getElementById('buyBtn').addEventListener('click', async () => {
+            // Redirect to PayPal subscription
+            window.location.href = PAYMENT_LINK;
+        });
+
+        // For testing - remove in production
+        // Uncomment to test the app without paying
+        // localStorage.setItem('speedr_paid', 'true');
+        // Reset free uploads: localStorage.setItem('speedr_free_uploads', '0');
+
+        // Initialize
+        checkAccess();
+
+        // State
+        let words = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let intervalId = null;
+        let wpm = 300;
+        let sentencePauseMultiplier = 2.5;
+
+        // Elements
+        const uploadSection = document.getElementById('uploadSection');
+        const readerSection = document.getElementById('readerSection');
+        const fileInput = document.getElementById('fileInput');
+        const wordDisplay = document.getElementById('wordDisplay');
+        const playBtn = document.getElementById('playBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const newFileBtn = document.getElementById('newFileBtn');
+        const wpmSlider = document.getElementById('wpmSlider');
+        const wpmDisplay = document.getElementById('wpmDisplay');
+        const progressFill = document.getElementById('progressFill');
+        const wordCount = document.getElementById('wordCount');
+        const timeRemaining = document.getElementById('timeRemaining');
+        const currentPosition = document.getElementById('currentPosition');
+        const playIcon = document.getElementById('playIcon');
+        const playText = document.getElementById('playText');
+
+        // Upload handlers
+        uploadSection.addEventListener('click', () => fileInput.click());
+        
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.style.borderColor = '#ef4444';
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.style.borderColor = '#333';
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.style.borderColor = '#333';
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        // File handling
+        async function handleFile(file) {
+            const fileName = file.name.toLowerCase();
+            
+            wordDisplay.innerHTML = '<div class="loading">Loading...</div>';
+            uploadSection.classList.add('active');
+            readerSection.classList.add('active');
+
+            try {
+                let text = '';
+
+                if (fileName.endsWith('.pdf')) {
+                    text = await extractTextFromPDF(file);
+                } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                    text = await extractTextFromDOCX(file);
+                } else if (fileName.endsWith('.txt')) {
+                    text = await file.text();
+                } else {
+                    throw new Error('Unsupported file format. Please use PDF, DOCX, or TXT.');
+                }
+
+                processText(text);
+                updateStats();
+                displayWord();
+                
+                // Track free upload if not paid
+                const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+                if (!hasPaid && !hasUsedFreeUpload()) {
+                    incrementFreeUpload();
+                }
+            } catch (error) {
+                alert('Error loading file: ' + error.message);
+                resetToUpload();
+            }
+        }
+
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + ' ';
+            }
+
+            return fullText;
+        }
+
+        async function extractTextFromDOCX(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            return result.value;
+        }
+
+        function processText(text) {
+            words = text
+                .replace(/\s+/g, ' ')
+                .trim()
+                .split(' ')
+                .filter(word => word.length > 0);
+            currentIndex = 0;
+        }
+
+        function getORPIndex(word) {
+            const length = word.length;
+            if (length === 1) return 0;
+            if (length === 2) return 0;
+            if (length === 3) return 1;
+            if (length <= 5) return 1;
+            if (length <= 9) return 2;
+            if (length <= 13) return 3;
+            return 4;
+        }
+
+        function endsWithSentence(word) {
+            return /[.!?]$/.test(word);
+        }
+
+        function displayWord() {
+            if (words.length === 0) return;
+
+            const word = words[currentIndex];
+            const orpIndex = getORPIndex(word);
+            
+            let html = '';
+            for (let i = 0; i < word.length; i++) {
+                const className = i === orpIndex ? 'letter highlight' : 'letter';
+                html += `<span class="${className}">${word[i]}</span>`;
+            }
+            
+            wordDisplay.innerHTML = html;
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const progress = ((currentIndex + 1) / words.length) * 100;
+            progressFill.style.width = progress + '%';
+            currentPosition.textContent = `${currentIndex + 1}/${words.length}`;
+            
+            const wordsLeft = words.length - currentIndex;
+            const minutesLeft = wordsLeft / wpm;
+            const seconds = Math.ceil(minutesLeft * 60);
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            timeRemaining.textContent = `${mins}:${secs.toString().padStart(2, '0')} remaining`;
+        }
+
+        function updateStats() {
+            wordCount.textContent = `${words.length} words`;
+            updateProgress();
+        }
+
+        function play() {
+            if (words.length === 0) return;
+            
+            isPlaying = true;
+            playIcon.textContent = '⏸';
+            playText.textContent = 'Pause';
+            
+            displayNextWord();
+        }
+
+        function displayNextWord() {
+            if (!isPlaying) return;
+            
+            displayWord();
+            
+            currentIndex++;
+            
+            if (currentIndex >= words.length) {
+                pause();
+                currentIndex = words.length - 1;
+                return;
+            }
+            
+            const baseInterval = 60000 / wpm;
+            const previousWord = words[currentIndex - 1];
+            const delay = endsWithSentence(previousWord) 
+                ? baseInterval * sentencePauseMultiplier 
+                : baseInterval;
+            
+            intervalId = setTimeout(displayNextWord, delay);
+        }
+
+        function pause() {
+            isPlaying = false;
+            playIcon.textContent = '▶';
+            playText.textContent = 'Play';
+            
+            if (intervalId) {
+                clearTimeout(intervalId);
+                intervalId = null;
+            }
+        }
+
+        function restart() {
+            pause();
+            currentIndex = 0;
+            displayWord();
+        }
+
+        function resetToUpload() {
+            pause();
+            words = [];
+            currentIndex = 0;
+            uploadSection.classList.remove('active');
+            readerSection.classList.remove('active');
+            fileInput.value = '';
+            
+            // Check if should show paywall for second upload
+            const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+            if (!hasPaid && hasUsedFreeUpload()) {
+                showPaywall();
+            }
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        });
+
+        restartBtn.addEventListener('click', restart);
+        newFileBtn.addEventListener('click', resetToUpload);
+
+        wpmSlider.addEventListener('input', (e) => {
+            wpm = parseInt(e.target.value);
+            wpmDisplay.textContent = `${wpm} WPM`;
+            updateProgress();
+            
+            if (isPlaying) {
+                const wasPlaying = isPlaying;
+                pause();
+                if (wasPlaying) {
+                    play();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('appContent').classList.contains('active')) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isPlaying) pause();
+                else play();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                pause();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    displayWord();
+                }
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                pause();
+                if (currentIndex < words.length - 1) {
+                    currentIndex++;
+                    displayWord();
+                }
+            } else if (e.code === 'KeyR') {
+                e.preventDefault();
+                restart();
+            }
+        });
+    </script>
+</body>
+</html>

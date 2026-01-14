@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Speedr</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-card {
+            background: #111;
+            border-radius: 16px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .success-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .success-message {
+            font-size: 18px;
+            color: #999;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .continue-btn {
+            background: #ef4444;
+            border: none;
+            color: #fff;
+            padding: 18px 48px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-decoration: none;
+            display: block;
+        }
+
+        .continue-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #333;
+            border-top-color: #ef4444;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Subscription Active!</div>
+        <div class="success-message" id="message">
+            Activating your unlimited access...
+        </div>
+        <a href="/" class="continue-btn" id="continueBtn" style="display: none;">
+            Start Speed Reading
+        </a>
+    </div>
+
+    <script>
+        // Grant access
+        localStorage.setItem('speedr_paid', 'true');
+
+        // Show success message and redirect button
+        setTimeout(() => {
+            document.getElementById('message').textContent = 'You now have unlimited access to Speedr!';
+            document.getElementById('continueBtn').style.display = 'block';
+            
+            // Auto-redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }, 1000);
+    </script>
+</body>
+</html>
