@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speedr - Speed Reading App</title>
+    <meta name="description" content="Sonic Reader - Read Faster! Upload PDFs and read at superhuman speeds with RSVP technology.">
+    <title>Sonic Reader - Read Faster!</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://js.stripe.com/v3/"></script>
@@ -44,6 +46,31 @@
         .app-header img {
             width: 150px;
             height: auto;
+        }
+
+        .pro-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .pro-badge.active {
+            display: flex;
+        }
+
+        .crown-icon {
+            font-size: 16px;
         }
 
         /* Paywall Styles */
@@ -438,6 +465,12 @@
     </style>
 </head>
 <body>
+    <!-- Pro Badge -->
+    <div class="pro-badge" id="proBadge">
+        <span class="crown-icon">👑</span>
+        <span>Sonic Reader Pro</span>
+    </div>
+
     <!-- Paywall -->
     <div class="paywall" id="paywall">
         <div class="pricing-card">
@@ -477,6 +510,14 @@
             <div class="price-period">per month</div>
 
             <button class="buy-btn" id="buyBtn">Subscribe Now</button>
+
+            <div style="margin: 24px 0; color: #666; font-size: 14px;">or</div>
+
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="licenseInput" placeholder="Enter license key" style="flex: 1; background: #222; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px;">
+                <button class="btn" id="activateBtn" style="background: #333; padding: 12px 20px;">Activate</button>
+            </div>
+            <div id="licenseError" style="color: #ef4444; font-size: 12px; margin-top: 8px; display: none;"></div>
 
             <div class="secure-badge">
                 <span>🔒</span>
@@ -555,18 +596,40 @@
         // Payment configuration - Stripe
         const PAYMENT_LINK = 'https://buy.stripe.com/8x2cN5c2r0XWcIL4kMgIo00';
         
+        // Valid license keys - add customer keys here after they purchase
+        const VALID_KEYS = [
+            'SONIC-PRO-2024-DEMO', // Demo key for testing
+        ];
+        
         // Note: Stripe return URL is set to: https://sonic-reader.com/success.html
 
         // Check if user has paid or has free upload remaining
         function checkAccess() {
             const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+            const licenseKey = localStorage.getItem('speedr_license');
             const freeUploadsUsed = parseInt(localStorage.getItem('speedr_free_uploads') || '0');
+            
+            // Check if they have a valid license key
+            if (licenseKey && VALID_KEYS.includes(licenseKey)) {
+                localStorage.setItem('speedr_paid', 'true');
+                showApp();
+                return;
+            }
             
             if (hasPaid || freeUploadsUsed === 0) {
                 showApp();
             } else {
                 showPaywall();
             }
+        }
+        
+        function validateLicenseKey(key) {
+            if (VALID_KEYS.includes(key.toUpperCase())) {
+                localStorage.setItem('speedr_license', key.toUpperCase());
+                localStorage.setItem('speedr_paid', 'true');
+                return true;
+            }
+            return false;
         }
 
         function showPaywall() {
@@ -577,6 +640,12 @@
         function showApp() {
             document.getElementById('paywall').classList.add('hidden');
             document.getElementById('appContent').classList.add('active');
+            
+            // Show Pro badge if paid
+            const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+            if (hasPaid) {
+                document.getElementById('proBadge').classList.add('active');
+            }
         }
 
         function incrementFreeUpload() {
@@ -590,8 +659,29 @@
 
         // Buy button handler
         document.getElementById('buyBtn').addEventListener('click', async () => {
-            // Redirect to PayPal subscription
+            // Redirect to Stripe subscription
             window.location.href = PAYMENT_LINK;
+        });
+        
+        // License key activation
+        document.getElementById('activateBtn').addEventListener('click', () => {
+            const key = document.getElementById('licenseInput').value.trim();
+            const errorDiv = document.getElementById('licenseError');
+            
+            if (!key) {
+                errorDiv.textContent = 'Please enter a license key';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (validateLicenseKey(key)) {
+                errorDiv.style.display = 'none';
+                showApp();
+                location.reload(); // Refresh to show Pro badge
+            } else {
+                errorDiv.textContent = 'Invalid license key';
+                errorDiv.style.display = 'block';
+            }
         });
 
         // For testing - remove in production
