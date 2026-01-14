@@ -248,6 +248,119 @@
             display: flex;
         }
 
+        .toc-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 300px;
+            background: #0a0a0a;
+            border-right: 1px solid #222;
+            padding: 20px;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .toc-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .toc-toggle {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            background: #222;
+            border: none;
+            color: #fff;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 101;
+            display: none;
+        }
+
+        .toc-toggle.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toc-toggle:hover {
+            background: #333;
+            transform: scale(1.1);
+        }
+
+        .toc-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toc-close {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .toc-close:hover {
+            color: #fff;
+        }
+
+        .toc-list {
+            list-style: none;
+        }
+
+        .toc-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #111;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .toc-item:hover {
+            background: #1a1a1a;
+            border-left-color: #ef4444;
+        }
+
+        .toc-item.active {
+            background: #1a1a1a;
+            border-left-color: #ef4444;
+        }
+
+        .toc-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .toc-item-preview {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         .reading-area {
             flex: 1;
             display: flex;
@@ -531,6 +644,18 @@
         <div class="app-header">
             <img src="logo.png" alt="Sonic Reader">
         </div>
+
+        <!-- Table of Contents Toggle -->
+        <button class="toc-toggle" id="tocToggle">📑</button>
+
+        <!-- Table of Contents Sidebar -->
+        <div class="toc-sidebar" id="tocSidebar">
+            <div class="toc-header">
+                <span>Table of Contents</span>
+                <button class="toc-close" id="tocClose">×</button>
+            </div>
+            <ul class="toc-list" id="tocList"></ul>
+        </div>
         
         <div class="upload-section" id="uploadSection">
             <div class="upload-icon">📄</div>
@@ -693,6 +818,7 @@
         let intervalId = null;
         let wpm = 300;
         let sentencePauseMultiplier = 2.5;
+        let sections = []; // Table of contents sections
 
         // Elements
         const uploadSection = document.getElementById('uploadSection');
@@ -805,6 +931,178 @@
                 .split(' ')
                 .filter(word => word.length > 0);
             currentIndex = 0;
+            
+            // Generate table of contents
+            generateTableOfContents(text);
+        }
+
+        function generateTableOfContents(text) {
+            sections = [];
+            const paragraphs = text.split(/\n\n+/); // Split by double line breaks
+            let wordIndex = 0;
+            
+            paragraphs.forEach((paragraph, paraIndex) => {
+                const trimmed = paragraph.trim();
+                if (!trimmed) return;
+                
+                const lines = trimmed.split('\n');
+                const firstLine = lines[0].trim();
+                const words = firstLine.split(' ');
+                
+                // Heading detection criteria
+                const isShortLine = words.length <= 12 && words.length >= 2;
+                const isAllCaps = firstLine === firstLine.toUpperCase() && firstLine.length > 3;
+                const startsWithNumber = /^(\d+\.|\d+\)|\d+\s)/.test(firstLine);
+                const startsWithChapter = /^(chapter|part|section|volume|book|appendix|introduction|conclusion|preface|foreword)\s+\d+/i.test(firstLine);
+                const startsWithRoman = /^[IVXLCDM]+\.?\s/i.test(firstLine);
+                const endsWithColon = firstLine.endsWith(':');
+                const isQuestion = firstLine.endsWith('?');
+                const hasNoEndPunctuation = !firstLine.match(/[.!?]$/);
+                
+                // Calculate heading score
+                let headingScore = 0;
+                if (isAllCaps) headingScore += 3;
+                if (startsWithChapter) headingScore += 5;
+                if (startsWithNumber) headingScore += 3;
+                if (startsWithRoman) headingScore += 3;
+                if (isShortLine && hasNoEndPunctuation) headingScore += 2;
+                if (endsWithColon) headingScore += 2;
+                if (isQuestion && isShortLine) headingScore += 1;
+                
+                // If heading score is high enough, it's likely a heading
+                if (headingScore >= 3 || startsWithChapter) {
+                    // Get preview from next paragraph or remaining text
+                    const preview = lines.length > 1 
+                        ? lines.slice(1).join(' ').substring(0, 120)
+                        : (paragraphs[paraIndex + 1] || '').substring(0, 120);
+                    
+                    // Clean up the title
+                    let title = firstLine;
+                    
+                    // Remove trailing colons
+                    if (title.endsWith(':')) {
+                        title = title.slice(0, -1);
+                    }
+                    
+                    // Capitalize properly if all caps
+                    if (isAllCaps && title.length > 20) {
+                        title = title.split(' ')
+                            .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+                            .join(' ');
+                    }
+                    
+                    sections.push({
+                        title: title,
+                        preview: preview.trim() + (preview.length >= 120 ? '...' : ''),
+                        wordIndex: wordIndex
+                    });
+                }
+                
+                wordIndex += trimmed.split(' ').length;
+            });
+            
+            // Fallback: If we found very few sections (less than 3), create smart auto-sections
+            if (sections.length < 3 && words.length > 1000) {
+                sections = [];
+                const wordsPerSection = Math.ceil(words.length / 10); // ~10 sections
+                
+                for (let i = 0; i < words.length; i += wordsPerSection) {
+                    // Find a sentence boundary near this position
+                    let adjustedIndex = i;
+                    for (let j = i; j < Math.min(i + 50, words.length); j++) {
+                        if (words[j] && /[.!?]$/.test(words[j])) {
+                            adjustedIndex = j + 1;
+                            break;
+                        }
+                    }
+                    
+                    // Get first sentence as title
+                    let titleWords = [];
+                    for (let j = adjustedIndex; j < Math.min(adjustedIndex + 15, words.length); j++) {
+                        titleWords.push(words[j]);
+                        if (/[.!?]$/.test(words[j])) break;
+                    }
+                    
+                    const title = titleWords.join(' ').replace(/[.!?]$/, '');
+                    const preview = words.slice(adjustedIndex + titleWords.length, adjustedIndex + titleWords.length + 20).join(' ');
+                    
+                    sections.push({
+                        title: title || `Reading Position ${Math.floor(adjustedIndex / wordsPerSection) + 1}`,
+                        preview: preview + '...',
+                        wordIndex: adjustedIndex
+                    });
+                }
+            }
+            
+            // If still no sections, just use beginning
+            if (sections.length === 0) {
+                sections.push({
+                    title: 'Start of Document',
+                    preview: words.slice(0, 20).join(' ') + '...',
+                    wordIndex: 0
+                });
+            }
+            
+            renderTableOfContents();
+        }
+
+        function renderTableOfContents() {
+            const tocList = document.getElementById('tocList');
+            const tocToggle = document.getElementById('tocToggle');
+            
+            if (sections.length === 0) {
+                tocToggle.style.display = 'none';
+                return;
+            }
+            
+            tocToggle.classList.add('active');
+            tocList.innerHTML = '';
+            
+            sections.forEach((section, index) => {
+                const li = document.createElement('li');
+                li.className = 'toc-item';
+                li.innerHTML = `
+                    <div class="toc-item-title">${section.title}</div>
+                    <div class="toc-item-preview">${section.preview}</div>
+                `;
+                
+                li.addEventListener('click', () => {
+                    jumpToSection(index);
+                    document.getElementById('tocSidebar').classList.remove('active');
+                });
+                
+                tocList.appendChild(li);
+            });
+        }
+
+        function jumpToSection(sectionIndex) {
+            if (sectionIndex < 0 || sectionIndex >= sections.length) return;
+            
+            pause();
+            currentIndex = sections[sectionIndex].wordIndex;
+            displayWord();
+            updateActiveTOCItem();
+        }
+
+        function updateActiveTOCItem() {
+            // Find which section we're currently in
+            let currentSection = 0;
+            for (let i = sections.length - 1; i >= 0; i--) {
+                if (currentIndex >= sections[i].wordIndex) {
+                    currentSection = i;
+                    break;
+                }
+            }
+            
+            // Update active state
+            const items = document.querySelectorAll('.toc-item');
+            items.forEach((item, index) => {
+                if (index === currentSection) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
         }
 
         function getORPIndex(word) {
@@ -836,6 +1134,7 @@
             
             wordDisplay.innerHTML = html;
             updateProgress();
+            updateActiveTOCItem();
         }
 
         function updateProgress() {
@@ -969,7 +1268,19 @@
             } else if (e.code === 'KeyR') {
                 e.preventDefault();
                 restart();
+            } else if (e.code === 'KeyT') {
+                e.preventDefault();
+                document.getElementById('tocSidebar').classList.toggle('active');
             }
+        });
+
+        // TOC toggle handlers
+        document.getElementById('tocToggle').addEventListener('click', () => {
+            document.getElementById('tocSidebar').classList.add('active');
+        });
+
+        document.getElementById('tocClose').addEventListener('click', () => {
+            document.getElementById('tocSidebar').classList.remove('active');
         });
     </script>
 </body>
