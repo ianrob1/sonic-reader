@@ -596,12 +596,8 @@
         // Payment configuration - Stripe
         const PAYMENT_LINK = 'https://buy.stripe.com/8x2cN5c2r0XWcIL4kMgIo00';
         
-        // Valid license keys - add customer keys here after they purchase
-        const VALID_KEYS = [
-            'SONIC-PRO-2024-DEMO', // Demo key for testing
-        ];
-        
         // Note: Stripe return URL is set to: https://sonic-reader.com/success.html
+        // License keys are auto-generated on payment (format: SONIC-XXXX-XXXX-XXXX-XXXX)
 
         // Check if user has paid or has free upload remaining
         function checkAccess() {
@@ -609,8 +605,8 @@
             const licenseKey = localStorage.getItem('speedr_license');
             const freeUploadsUsed = parseInt(localStorage.getItem('speedr_free_uploads') || '0');
             
-            // Check if they have a valid license key
-            if (licenseKey && VALID_KEYS.includes(licenseKey)) {
+            // Check if they have a valid license key (any SONIC key format)
+            if (licenseKey && validateLicenseKey(licenseKey)) {
                 localStorage.setItem('speedr_paid', 'true');
                 showApp();
                 return;
@@ -624,12 +620,9 @@
         }
         
         function validateLicenseKey(key) {
-            if (VALID_KEYS.includes(key.toUpperCase())) {
-                localStorage.setItem('speedr_license', key.toUpperCase());
-                localStorage.setItem('speedr_paid', 'true');
-                return true;
-            }
-            return false;
+            // Accept any key in format: SONIC-XXXX-XXXX-XXXX-XXXX (or similar)
+            const sonicKeyPattern = /^SONIC-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+            return sonicKeyPattern.test(key.toUpperCase().trim());
         }
 
         function showPaywall() {
@@ -675,11 +668,12 @@
             }
             
             if (validateLicenseKey(key)) {
+                localStorage.setItem('speedr_license', key.toUpperCase());
+                localStorage.setItem('speedr_paid', 'true');
                 errorDiv.style.display = 'none';
-                showApp();
                 location.reload(); // Refresh to show Pro badge
             } else {
-                errorDiv.textContent = 'Invalid license key';
+                errorDiv.textContent = 'Invalid license key format. Should be: SONIC-XXXX-XXXX-XXXX-XXXX';
                 errorDiv.style.display = 'block';
             }
         });
