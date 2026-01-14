@@ -575,12 +575,77 @@
                 flex: 1;
             }
         }
+
+        /* SVG Icons */
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .icon-sm {
+            width: 16px;
+            height: 16px;
+        }
+
+        .icon-lg {
+            width: 48px;
+            height: 48px;
+        }
+
+        .icon-xl {
+            width: 64px;
+            height: 64px;
+        }
     </style>
 </head>
 <body>
+    <!-- SVG Icon Definitions -->
+    <svg style="display: none;">
+        <defs>
+            <symbol id="icon-document" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+            </symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M8 5v14l11-7z"/>
+            </symbol>
+            <symbol id="icon-pause" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </symbol>
+            <symbol id="icon-restart" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+            </symbol>
+            <symbol id="icon-toc" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M3 9h14V7H3v2zm0 4h14v-2H3v2zm0 4h14v-2H3v2zm16 0h2v-2h-2v2zm0-10v2h2V7h-2zm0 6h2v-2h-2v2z"/>
+            </symbol>
+            <symbol id="icon-close" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </symbol>
+            <symbol id="icon-crown" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+            </symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 1c-1.7 0-3 1.3-3 3v4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2V4c0-1.7-1.3-3-3-3zm0 2c.6 0 1 .4 1 1v4h-2V4c0-.6.4-1 1-1z"/>
+            </symbol>
+            <symbol id="icon-book" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+            </symbol>
+            <symbol id="icon-clock" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/>
+            </symbol>
+            <symbol id="icon-location" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+            </symbol>
+            <symbol id="icon-file" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M13 9V3.5L18.5 9M6 2c-1.11 0-2 .89-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6z"/>
+            </symbol>
+        </defs>
+    </svg>
+
     <!-- Pro Badge -->
     <div class="pro-badge" id="proBadge">
-        <span class="crown-icon">👑</span>
+        <svg class="icon crown-icon"><use href="#icon-crown"/></svg>
         <span>Sonic Reader Pro</span>
     </div>
 
@@ -633,7 +698,7 @@
             <div id="licenseError" style="color: #ef4444; font-size: 12px; margin-top: 8px; display: none;"></div>
 
             <div class="secure-badge">
-                <span>🔒</span>
+                <svg class="icon-sm"><use href="#icon-lock"/></svg>
                 <span>Secure payment - Cancel anytime</span>
             </div>
         </div>
@@ -646,7 +711,9 @@
         </div>
 
         <!-- Table of Contents Toggle -->
-        <button class="toc-toggle" id="tocToggle">📑</button>
+        <button class="toc-toggle" id="tocToggle">
+            <svg class="icon"><use href="#icon-toc"/></svg>
+        </button>
 
         <!-- Table of Contents Sidebar -->
         <div class="toc-sidebar" id="tocSidebar">
@@ -658,7 +725,9 @@
         </div>
         
         <div class="upload-section" id="uploadSection">
-            <div class="upload-icon">📄</div>
+            <div class="upload-icon">
+                <svg class="icon-lg"><use href="#icon-document"/></svg>
+            </div>
             <div class="upload-text">Drop your PDF or DOCX file here</div>
             <div class="upload-subtext">or click to browse</div>
             <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt">
@@ -680,11 +749,17 @@
                 <div class="control-row">
                     <div class="play-controls">
                         <button class="btn primary" id="playBtn">
-                            <span id="playIcon">▶</span>
+                            <svg class="icon" id="playIcon"><use href="#icon-play"/></svg>
                             <span id="playText">Play</span>
                         </button>
-                        <button class="btn" id="restartBtn">⟲ Restart</button>
-                        <button class="btn" id="newFileBtn">📄 New File</button>
+                        <button class="btn" id="restartBtn">
+                            <svg class="icon"><use href="#icon-restart"/></svg>
+                            Restart
+                        </button>
+                        <button class="btn" id="newFileBtn">
+                            <svg class="icon"><use href="#icon-file"/></svg>
+                            New File
+                        </button>
                     </div>
 
                     <div class="slider-control">
@@ -698,15 +773,15 @@
 
                 <div class="stats">
                     <div class="stat-item">
-                        <span>📖</span>
+                        <svg class="icon-sm"><use href="#icon-book"/></svg>
                         <span id="wordCount">0 words</span>
                     </div>
                     <div class="stat-item">
-                        <span>⏱️</span>
+                        <svg class="icon-sm"><use href="#icon-clock"/></svg>
                         <span id="timeRemaining">0:00 remaining</span>
                     </div>
                     <div class="stat-item">
-                        <span>📍</span>
+                        <svg class="icon-sm"><use href="#icon-location"/></svg>
                         <span id="currentPosition">0/0</span>
                     </div>
                 </div>
@@ -1159,7 +1234,7 @@
             if (words.length === 0) return;
             
             isPlaying = true;
-            playIcon.textContent = '⏸';
+            playIcon.innerHTML = '<use href="#icon-pause"/>';
             playText.textContent = 'Pause';
             
             displayNextWord();
@@ -1189,7 +1264,7 @@
 
         function pause() {
             isPlaying = false;
-            playIcon.textContent = '▶';
+            playIcon.innerHTML = '<use href="#icon-play"/>';
             playText.textContent = 'Play';
             
             if (intervalId) {
