@@ -6,6 +6,7 @@
     <title>Speedr - Speed Reading App</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         * {
             margin: 0;
@@ -551,11 +552,10 @@
         // PDF.js worker setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // Payment configuration
-        const PAYPAL_HOSTED_BUTTON_ID = '8N7PLYFKDKHPC'; // Your PayPal button ID
-        const PAYMENT_LINK = `https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=${PAYPAL_HOSTED_BUTTON_ID}`;
+        // Payment configuration - Stripe
+        const PAYMENT_LINK = 'https://buy.stripe.com/8x2cN5c2r0XWcIL4kMgIo00';
         
-        // Note: Make sure to set PayPal return URL to: https://sonic-reader.com/success.html
+        // Note: Stripe return URL is set to: https://sonic-reader.com/success.html
 
         // Check if user has paid or has free upload remaining
         function checkAccess() {
@@ -653,6 +653,13 @@
 
         // File handling
         async function handleFile(file) {
+            // Check if should show paywall BEFORE uploading
+            const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+            if (!hasPaid && hasUsedFreeUpload()) {
+                showPaywall();
+                return; // Stop here - show paywall
+            }
+            
             const fileName = file.name.toLowerCase();
             
             wordDisplay.innerHTML = '<div class="loading">Loading...</div>';
@@ -676,8 +683,7 @@
                 updateStats();
                 displayWord();
                 
-                // Track free upload if not paid
-                const hasPaid = localStorage.getItem('speedr_paid') === 'true';
+                // Track free upload AFTER successful load
                 if (!hasPaid && !hasUsedFreeUpload()) {
                     incrementFreeUpload();
                 }
